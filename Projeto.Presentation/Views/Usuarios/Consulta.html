@@ -1,0 +1,215 @@
+﻿<!DOCTYPE html>
+<html ng-app="appUsuario">
+<head>
+    <meta charset="utf-8" />
+    <title>Sistema de Controle de Usuários</title>
+    <link href="../../Content/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="container" ng-controller="usuarioController">
+    <div class="card card-body bg-dark">
+        <h2 class="text-white">Sistema de Controle de Usuários</h2>
+        <p class="text-white">
+            <a href="/index.html">Voltar</a> para a página inicial.
+        </p>
+    </div>
+    <br />
+    <strong>Consulta de usuários cadastrados</strong>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-4">
+            <label>Pesquisar Usuários:</label>
+            <input type="text" placeholder="Digite aqui"
+                   class="form-control" ng-model="pesquisa" />
+        </div>
+        <div class="col-md-3">
+            <label>Ordenar Usuários:</label>
+            <select class="form-control" ng-model="ordenacao">
+                <option value="">Escolha uma Opção</option>
+                <option value="IdUsuario">Id do Usuário</option>
+                <option value="Nome">Nome do Usuário</option>
+                <option value="Email">Email</option>
+                <option value="DataCadastro">Data de cadastro</option>
+            </select>
+        </div>
+    </div>
+
+    <br />
+
+    <table class="table table-bordered table-hover table-striped"
+           ng-init="consultar()">
+        <thead>
+            <tr>
+                <th class="bg-dark text-white">Id do Usuário</th>
+                <th class="bg-dark text-white">Nome do Usuário</th>
+                <th class="bg-dark text-white">Email</th>
+                <th class="bg-dark text-white">Data de cadastro</th>
+                <th class="bg-dark text-white">Operações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr ng-repeat="u in usuarios | filter: pesquisa | orderBy: ordenacao">
+                <td>{{u.IdUsuario}}</td>
+                <td>{{u.Nome}}</td>
+                <td>{{u.Email}}</td>
+                <td>{{u.DataCadastro | date : 'dd/MM/yyyy'}}</td>
+                <td>
+                    <button class="btn btn-primary btn-sm"
+                            ng-click="obter(u.IdUsuario)"
+                            data-target="#janelaedicao"
+                            data-toggle="modal">
+                        Atualizar
+                    </button>
+
+                    <button class="btn btn-danger btn-sm"
+                            ng-click="obter(u.IdUsuario)"
+                            data-target="#janelaexclusao"
+                            data-toggle="modal">
+                        Excluir
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4">Quantidade de usuários: {{(usuarios | filter : pesquisa).length}} </td>
+            </tr>
+        </tfoot>
+    </table>
+    
+    <br />
+    
+    <div>
+        <strong>{{mensagem}}</strong>
+    </div>
+
+    <!-- Janela de edição -->
+    <div id="janelaedicao" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary">
+                    <h4 class="text-white">Atualizar dados do usuário</h4>
+                </div>
+                <div class="modal-body">
+                    <label>Id do Usuário:</label>
+                    <input type="text" class="form-control"
+                           ng-model="usuario.IdUsuario" readonly />
+                    <br />
+                    <label>Nome do Usuário:</label>
+                    <input type="text" class="form-control"
+                           ng-model="usuario.Nome" />
+                    <br />
+                    <label>Email:</label>
+                    <input type="text" class="form-control"
+                           ng-model="usuario.Email" />
+                    <br />
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-info"
+                            data-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button class="btn btn-primary" data-dismiss="modal"
+                            ng-click="atualizar()">
+                        Atualizar Usuário
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Janela de exclusão -->
+    <div id="janelaexclusao" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger">
+                    <h4 class="text-white">Exclusão de Usuário</h4>
+                </div>
+                <div class="modal-body">
+                    Deseja realmente excluir este Usuário?
+                    <hr />
+                    Id do Usuário: <strong>{{usuario.IdUsuario}}</strong>
+                    <br />
+                    Nome do Usuário: <strong>{{usuario.Nome}}</strong>
+                    <br />
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-info"
+                            data-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button class="btn btn-danger" data-dismiss="modal"
+                            ng-click="excluir()">
+                        Excluir Usuário
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../Scripts/jquery-3.0.0.min.js"></script>
+    <script src="../../Scripts/bootstrap.min.js"></script>
+    <script src="../../Scripts/angular.min.js"></script>
+
+    <script>
+
+        var app = angular.module('appUsuario', []);
+
+        app.controller('usuarioController',
+            function ($scope, $http) {
+
+                //função para consultar os usuários
+                $scope.consultar = function () {
+
+                    //requisição para a API de consulta de usuários
+                    $http.get("https://localhost:44346/api/usuario/obtertodos")
+                        .then(function (result) {
+                            $scope.usuarios = result.data; //armazenando a listagem
+                        })
+                        .catch(function (e) {
+                            $scope.mensagem = e.data;
+                        });
+                };
+
+                //função para buscar 1 usuário pelo id
+                $scope.obter = function (idUsuario) {
+                    $http.get("https://localhost:44346/api/usuario/obter?idUsuario=" + idUsuario)
+                        .then(function (result) {
+                            $scope.usuario = result.data; //armazenando 1 setor
+                        })
+                        .catch(function (e) {
+                            $scope.mensagem = e.data;
+                        });
+                };
+
+                //função para atualizar os dados do usuário
+                $scope.atualizar = function () {
+                    $http.put("https://localhost:44346/api/usuario/atualizar", $scope.usuario)
+                        .then(function (result) {
+                            $scope.mensagem = result.data;
+                            $scope.consultar(); //executando a função
+                        })
+                        .catch(function (e) {
+                            $scope.mensagem = e.data;
+                        });
+                };
+
+                //função para excluir o usuário
+                $scope.excluir = function () {
+                    $http.delete("https://localhost:44346/api/usuario/excluir?idUsuario=" + $scope.usuario.IdUsuario)
+                        .then(function (result) {
+                            $scope.mensagem = result.data;
+                            $scope.consultar(); //executando a função
+                        })
+                        .catch(function (e) {
+                            $scope.mensagem = e.data;
+                        });
+                };
+
+            });
+
+
+    </script>
+
+</body>
+</html>
